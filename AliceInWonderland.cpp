@@ -32,22 +32,103 @@ Discussion:
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <algorithm>
+#include <iterator>
 #include <unordered_map>
+
 using namespace std;
 
+class Actions {
+        public:
+        unordered_map<string, int> valid_actions;
+        string action;
+        int direction = 0;
 
+        Actions(){
+            string action = "";
+            valid_actions["n"] = 1;
+            valid_actions["north"] = 2;
+            valid_actions["s"] = 3;
+            valid_actions["south"] = 4;
+            valid_actions["w"] = 5;
+            valid_actions["west"] = 6;
+            valid_actions["e"] = 7;
+            valid_actions["east"] = 8;
+            valid_actions["down"] = 9;
+            valid_actions["up"] = 10;
+
+        }
+
+        bool check_valid(){
+            bool valid = false;
+            
+            if (valid_actions.find(action) == valid_actions.end()){
+                return valid;
+            }
+            return valid = true;
+        }
+
+        int find_direction(){
+    
+            if (valid_actions[action] > 8){
+                return 0;
+            }
+            int action_no = valid_actions[action];
+            switch (action_no){
+                case 1:
+                direction= 100;
+                break;
+                case 2:
+                direction= 100;
+                break;
+                case 3:
+                direction= 300;
+                break;
+                case 4:
+                direction= 300;
+                break;
+                case 5:
+                direction= 400;
+                break;
+                case 6:
+                direction= 400;
+                break;
+                case 7:
+                direction= 200;
+                break;
+                case 8:
+                direction= 200;
+                break;
+                case 9:
+                direction= 500;
+                break;
+                case 10:
+                direction= 600;
+                break;
+                default:
+                direction = 0;
+            }
+
+        }
+
+    };
 class Location {
         public:
         int number;
         string locationTitle;
         string locationMessage;
         
-        vector<string> exits;
+        unordered_map<int, int> exits;
         
-        Location(int n, string title, string m, vector<string> e){
+        
+        Location(int n, string title, string m, unordered_map<int,int> e){
             locationTitle = title;
             number = n;
             locationMessage = m;
+            exits = e;
+        }
+        
+        void add_exits(unordered_map<int, int> e){
             exits = e;
         }
 
@@ -56,7 +137,12 @@ class Location {
 
         }
 
+        int valid_direction(Actions a){
+            return this->exits[a.direction];
+        }
+
     };
+
 
 class Inventory {
         public:
@@ -111,38 +197,7 @@ class Characters {
 
     };
 
-class Actions {
-        public:
-        unordered_map<string, int> valid_actions;
-        string action;
 
-        Actions(){
-            string action = "";
-            valid_actions["n"] = 1;
-            valid_actions["north"] = 2;
-            valid_actions["s"] = 3;
-            valid_actions["south"] = 4;
-            valid_actions["w"] = 5;
-            valid_actions["west"] = 6;
-            valid_actions["e"] = 7;
-            valid_actions["east"] = 8;
-        }
-
-        bool check_valid(){
-            bool valid = false;
-            
-            auto f = find(valid_actions.begin(), valid_actions.end(), action);
-            if (f == valid_actions.end()){
-                valid = false;
-            }
-            else{
-                valid = true;
-            }
-            return valid;
-
-        }
-
-    };
     
 
 
@@ -157,19 +212,64 @@ class Game {
  
     }
 
+
+    vector<Location> Create_locations(string file){
+        vector<Location> locations;
+        ifstream myfile; 
+        myfile.open(file);
+        string line;
+        
+        if (!myfile) {                        
+            cout<<"File doesnt exist.";          
+        }
+
+        while (getline(myfile, line))
+        {
+            stringstream ss(line);
+            int number;
+            string title, message;
+            int key1, value1, key2, value2, key3, value3, key4, value4, key5, value5, key6, value6;
+
+            ss >> number;
+            ss >> __quoted(title);
+            ss >> __quoted(message);
+            ss >> key1;
+            ss >> value1;
+            ss >> key2;
+            ss >> value2;
+            ss >> key3;
+            ss >> value3;
+            ss >> key4;
+            ss >> value4;
+            ss >> key5;
+            ss >> value5;
+            ss >> key6;
+            ss >> value6;
+            
+            unordered_map<int,int> exits;
+            exits[key1] = value1;
+            exits[key2] = value2;
+            exits[key3] = value3;
+            exits[key4] = value4;
+            exits[key5] = value5;
+            exits[key6] = value6;
+            Location location(number, title, message,exits);
+        
+            locations.push_back(location);
+        }
+        return locations;
+    }
+
     void play(){
         game_running = true;
         int score = 0;
         int location = 0;
         Control controller;
         Entry_message();
-        vector <string> exits_0 = {"north", "west"};
-        vector <string> exits_1 = {"north", "west", "south", "east"};
-        Location Garden_0(0, "Garden", "You are in a beautiful garden. To your west, a group of fancy looking people seem to be waiting for you.\nSuddenly, out of the corner of your eye, you see a white rabbit in some sort of suit dart off to your north.\n", exits_0 );
-        Location Garden_1(1, "Garden", "You are in a beautiful garden. The shrubs are higher here and the noise from the party has grown quieter. You look around and notice the rabbit dissapear to the east.", exits_1);
         vector<Location> locations;
-        locations.push_back(Garden_0);
-        locations.push_back(Garden_1);
+        
+        locations = Create_locations("Locations.txt");
+
         while (game_running){
             cout << locations[location].locationMessage << endl;
             controller.get_action();
@@ -179,9 +279,13 @@ class Game {
                 cout << "invalid action, please try again" << endl;
                 controller.get_action();
                 action1.action = controller.action;
+                action1.check_valid();
             }
-
-
+            int move;
+            action1.find_direction();
+            move = locations[location].valid_direction(action1);
+            location += move;
+            
         }
     }
 
